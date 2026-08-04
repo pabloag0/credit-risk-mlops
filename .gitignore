@@ -1,0 +1,7 @@
+.venv/
+.conda/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+model/*.pkl
