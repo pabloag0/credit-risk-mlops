@@ -4,3 +4,5 @@ pydantic
 onnxruntime
 numpy
 pandas
+plotly
+streamlit
