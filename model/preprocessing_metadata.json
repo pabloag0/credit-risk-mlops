@@ -1,0 +1,134 @@
+{
+  "raw_columns": [
+    "person_age",
+    "person_education",
+    "person_income",
+    "person_emp_exp",
+    "person_home_ownership",
+    "loan_amnt",
+    "loan_intent",
+    "loan_int_rate",
+    "loan_percent_income",
+    "cb_person_cred_hist_length",
+    "credit_score",
+    "previous_loan_defaults_on_file"
+  ],
+  "columns": [
+    "person_age",
+    "person_income",
+    "person_emp_exp",
+    "loan_amnt",
+    "loan_int_rate",
+    "loan_percent_income",
+    "cb_person_cred_hist_length",
+    "credit_score",
+    "person_education_Bachelor",
+    "person_education_Doctorate",
+    "person_education_High School",
+    "person_education_Master",
+    "person_home_ownership_OTHER",
+    "person_home_ownership_OWN",
+    "person_home_ownership_RENT",
+    "loan_intent_EDUCATION",
+    "loan_intent_HOMEIMPROVEMENT",
+    "loan_intent_MEDICAL",
+    "loan_intent_PERSONAL",
+    "loan_intent_VENTURE",
+    "previous_loan_defaults_on_file_Yes"
+  ],
+  "numeric_cols": [
+    "person_age",
+    "person_income",
+    "person_emp_exp",
+    "loan_amnt",
+    "loan_int_rate",
+    "loan_percent_income",
+    "cb_person_cred_hist_length",
+    "credit_score"
+  ],
+  "category_levels": {
+    "person_education": [
+      "Associate",
+      "Bachelor",
+      "Doctorate",
+      "High School",
+      "Master"
+    ],
+    "person_home_ownership": [
+      "MORTGAGE",
+      "OTHER",
+      "OWN",
+      "RENT"
+    ],
+    "loan_intent": [
+      "DEBTCONSOLIDATION",
+      "EDUCATION",
+      "HOMEIMPROVEMENT",
+      "MEDICAL",
+      "PERSONAL",
+      "VENTURE"
+    ],
+    "previous_loan_defaults_on_file": [
+      "No",
+      "Yes"
+    ]
+  },
+  "means": {
+    "person_age": 27.73325920778318,
+    "person_income": 79355.75121612231,
+    "person_emp_exp": 5.380875608061154,
+    "loan_amnt": 9595.176928422516,
+    "loan_int_rate": 11.01061403752606,
+    "loan_percent_income": 0.13994023627519112,
+    "cb_person_cred_hist_length": 5.851563585823489,
+    "credit_score": 632.6531202223766,
+    "person_education_Bachelor": 0.2996803335649757,
+    "person_education_Doctorate": 0.013954134815844337,
+    "person_education_High School": 0.26590687977762334,
+    "person_education_Master": 0.15421820708825573,
+    "person_home_ownership_OTHER": 0.0024461431549687284,
+    "person_home_ownership_OWN": 0.06615705350938152,
+    "person_home_ownership_RENT": 0.5203335649756775,
+    "loan_intent_EDUCATION": 0.20272411396803336,
+    "loan_intent_HOMEIMPROVEMENT": 0.10596247394023628,
+    "loan_intent_MEDICAL": 0.19093815149409313,
+    "loan_intent_PERSONAL": 0.16731063238359972,
+    "loan_intent_VENTURE": 0.17520500347463516,
+    "previous_loan_defaults_on_file_Yes": 0.5080750521195274
+  },
+  "stds": {
+    "person_age": 5.870672022619003,
+    "person_income": 54944.813160772326,
+    "person_emp_exp": 5.885721722816218,
+    "loan_amnt": 6304.17494280421,
+    "loan_int_rate": 2.9757295971297673,
+    "loan_percent_income": 0.08707769793095904,
+    "cb_person_cred_hist_length": 3.852767002432755,
+    "credit_score": 50.324243123095904,
+    "person_education_Bachelor": 0.4581242901565522,
+    "person_education_Doctorate": 0.11730217141915492,
+    "person_education_High School": 0.44182104659814536,
+    "person_education_Master": 0.3611628130116443,
+    "person_home_ownership_OTHER": 0.049398657571160104,
+    "person_home_ownership_OWN": 0.24855988240268476,
+    "person_home_ownership_RENT": 0.4995933187160844,
+    "loan_intent_EDUCATION": 0.4020342528553771,
+    "loan_intent_HOMEIMPROVEMENT": 0.3077938619766506,
+    "loan_intent_MEDICAL": 0.39304588540284785,
+    "loan_intent_PERSONAL": 0.3732581645596496,
+    "loan_intent_VENTURE": 0.38014763875397006,
+    "previous_loan_defaults_on_file_Yes": 0.4999417377896833
+  },
+  "categorical_cols": [
+    "person_education",
+    "person_home_ownership",
+    "loan_intent",
+    "previous_loan_defaults_on_file"
+  ],
+  "drop_first": true,
+  "output": {
+    "name": "output",
+    "positive_class": 1,
+    "threshold": 0.5
+  }
+}

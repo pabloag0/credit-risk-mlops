@@ -1,0 +1,7 @@
+services:
+  fastapi-backend:
+    build: .
+    container_name: credit-risk-api
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
