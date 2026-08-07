@@ -1,8 +1,8 @@
 fastapi
 uvicorn
 pydantic
-onnxruntime
 numpy
 pandas
 plotly
 streamlit
+scikit-learn
