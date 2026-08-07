@@ -40,6 +40,8 @@ def main():
     ]
     
     X = df.drop(columns=[TARGET_COL])
+    if "person_gender" in X.columns:
+        X = X.drop(columns=["person_gender"])
     y = df[TARGET_COL]
 
     numeric_transformer = Pipeline(steps=[
