@@ -102,12 +102,23 @@ def main():
     os.makedirs(os.path.dirname(MODEL_OUTPUT_PATH), exist_ok=True)
     joblib.dump(model, MODEL_OUTPUT_PATH)
 
+    # Evaluar sobre el mismo validation_sample.csv que usa el Quality Gate del CI
+    # (así metrics.json y el test comparten exactamente el mismo punto de referencia)
+    VALIDATION_PATH = os.path.join(BASE_DIR, "..", "tests", "validation_sample.csv")
+    df_val = pd.read_csv(VALIDATION_PATH)
+    if "person_gender" in df_val.columns:
+        df_val = df_val.drop(columns=["person_gender"])
+    X_gate = df_val.drop(columns=[TARGET_COL])
+    y_gate = df_val[TARGET_COL]
+    preds_gate = model.predict(X_gate)
+    f1_gate = f1_score(y_gate, preds_gate, average="macro")
+
     # Guardar métricas como baseline para el Quality Gate del CI
     metrics_path = os.path.join(os.path.dirname(MODEL_OUTPUT_PATH), "metrics.json")
     with open(metrics_path, "w") as f:
-        json.dump({"accuracy": round(accuracy, 4), "f1_macro": round(f1, 4)}, f, indent=2)
+        json.dump({"accuracy": round(accuracy, 4), "f1_macro": round(f1_gate, 4)}, f, indent=2)
 
-    print(f"Métricas guardadas en {metrics_path}")
+    print(f"Métricas guardadas en {metrics_path} (F1 sobre validation_sample: {f1_gate:.4f})")
 
 if __name__ == "__main__":
     main()
