@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Risk AI Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .input-field {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        /* Custom Gauge */
+        .gauge-container {
+            position: relative;
+            width: 200px;
+            height: 100px;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+        .gauge-background {
+            position: absolute;
+            top: 0; left: 0;
+            width: 200px; height: 200px;
+            border-radius: 50%;
+            background: conic-gradient(from -90deg at 50% 50%, #ef4444 0deg, #ef4444 60deg, #f59e0b 60deg, #f59e0b 120deg, #22c55e 120deg, #22c55e 180deg, transparent 180deg);
+        }
+        .gauge-mask {
+            position: absolute;
+            top: 20px; left: 20px;
+            width: 160px; height: 160px;
+            border-radius: 50%;
+            background: #1e293b; /* matches panel */
+        }
+        .gauge-needle {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 4px;
+            height: 90px;
+            background: white;
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(-90deg); /* -90 is 0%, 90 is 100% */
+            transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 2px;
+        }
+        .gauge-needle::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: -4px;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+        }
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 3px solid #3b82f6;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex items-center justify-center">
+
+    <div class="max-w-6xl w-full">
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400 mb-4">
+                🏦 Simulador de Riesgo de Crédito IA
+            </h1>
+            <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+                Rellena el perfil del cliente. Nuestro modelo neuronal analizará los datos en tiempo real para determinar la viabilidad del préstamo.
+            </p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Form Panel -->
+            <div class="glass-panel rounded-2xl p-6 md:p-8 flex-grow">
+                <h2 class="text-2xl font-semibold mb-6 border-b border-slate-700 pb-2">Datos del Solicitante</h2>
+                
+                <form id="loanForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Column 1 -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Edad</label>
+                            <input type="number" id="person_age" min="18" max="100" value="30" class="input-field w-full rounded-lg px-4 py-2" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Ingresos anuales ($)</label>
+                            <input type="number" id="person_income" min="1" step="1000" value="50000" class="input-field w-full rounded-lg px-4 py-2" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Experiencia laboral (años)</label>
+                            <input type="number" id="person_emp_exp" min="0" max="60" value="5" class="input-field w-full rounded-lg px-4 py-2" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Nivel educativo</label>
+                            <select id="person_education" class="input-field w-full rounded-lg px-4 py-2" required>
+                                <option value="High School">High School</option>
+                                <option value="Associate">Associate</option>
+                                <option value="Bachelor">Bachelor</option>
+                                <option value="Master">Master</option>
+                                <option value="Doctorate">Doctorate</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Column 2 -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Cantidad solicitada ($)</label>
+                            <input type="number" id="loan_amnt" min="1" step="500" value="10000" class="input-field w-full rounded-lg px-4 py-2" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Interés esperado (%)</label>
+                            <input type="number" id="loan_int_rate" min="0" step="0.1" value="10.5" class="input-field w-full rounded-lg px-4 py-2" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Propósito del préstamo</label>
+                            <select id="loan_intent" class="input-field w-full rounded-lg px-4 py-2" required>
+                                <option value="EDUCATION">EDUCATION</option>
+                                <option value="MEDICAL">MEDICAL</option>
+                                <option value="VENTURE">VENTURE</option>
+                                <option value="PERSONAL">PERSONAL</option>
+                                <option value="DEBTCONSOLIDATION">DEBTCONSOLIDATION</option>
+                                <option value="HOMEIMPROVEMENT">HOMEIMPROVEMENT</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Vivienda</label>
+                            <select id="person_home_ownership" class="input-field w-full rounded-lg px-4 py-2" required>
+                                <option value="RENT">RENT</option>
+                                <option value="MORTGAGE">MORTGAGE</option>
+                                <option value="OWN">OWN</option>
+                                <option value="OTHER">OTHER</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Column 3 -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Puntuación crédito (Score)</label>
+                            <input type="number" id="credit_score" min="300" max="850" value="650" class="input-field w-full rounded-lg px-4 py-2" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Historial crediticio (años)</label>
+                            <input type="number" id="cb_person_cred_hist_length" min="0" value="5" class="input-field w-full rounded-lg px-4 py-2" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">¿Impagos previos?</label>
+                            <select id="previous_loan_defaults_on_file" class="input-field w-full rounded-lg px-4 py-2" required>
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="md:col-span-2 lg:col-span-3 mt-4">
+                        <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
+                            <span>Analizar Riesgo</span>
+                            <div id="loadingSpinner" class="spinner hidden"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Panel -->
+            <div id="resultsPanel" class="glass-panel rounded-2xl p-6 md:p-8 w-full lg:w-1/3 flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-500">
+                <h2 class="text-xl font-semibold text-slate-300 mb-6">Evaluación del Modelo</h2>
+                
+                <div class="gauge-container mb-4">
+                    <div class="gauge-background"></div>
+                    <div class="gauge-mask"></div>
+                    <div id="gaugeNeedle" class="gauge-needle"></div>
+                </div>
+
+                <div class="text-center mb-6">
+                    <div id="probText" class="text-4xl font-bold mb-2">0.0%</div>
+                    <div class="text-sm text-slate-400 uppercase tracking-wide">Probabilidad de Aprobación</div>
+                </div>
+
+                <div id="statusBadge" class="w-full py-3 px-4 rounded-lg text-center font-bold text-lg">
+                    <!-- Status injected via JS -->
+                </div>
+                
+                <p id="statusDesc" class="text-slate-400 text-sm text-center mt-4">
+                    <!-- Description injected via JS -->
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/predict';
+
+        document.getElementById('loanForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const spinner = document.getElementById('loadingSpinner');
+            const resultsPanel = document.getElementById('resultsPanel');
+            
+            // UI Loading state
+            btn.disabled = true;
+            spinner.classList.remove('hidden');
+            resultsPanel.classList.add('hidden');
+            resultsPanel.classList.remove('opacity-100');
+
+            // Gather data
+            const person_income = parseFloat(document.getElementById('person_income').value);
+            const loan_amnt = parseFloat(document.getElementById('loan_amnt').value);
+            const loan_percent_income = person_income > 0 ? Math.min(loan_amnt / person_income, 1.0) : 1.0;
+
+            const payload = {
+                person_age: parseInt(document.getElementById('person_age').value),
+                person_education: document.getElementById('person_education').value,
+                person_income: person_income,
+                person_emp_exp: parseInt(document.getElementById('person_emp_exp').value),
+                person_home_ownership: document.getElementById('person_home_ownership').value,
+                loan_amnt: loan_amnt,
+                loan_intent: document.getElementById('loan_intent').value,
+                loan_int_rate: parseFloat(document.getElementById('loan_int_rate').value),
+                loan_percent_income: loan_percent_income,
+                cb_person_cred_hist_length: parseInt(document.getElementById('cb_person_cred_hist_length').value),
+                credit_score: parseInt(document.getElementById('credit_score').value),
+                previous_loan_defaults_on_file: document.getElementById('previous_loan_defaults_on_file').value
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error API: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Show results
+                displayResults(data.probability, data.loan_status);
+                
+            } catch (error) {
+                alert("Error de conexión. Asegúrate de que el backend está corriendo en " + API_URL + "\nDetalle: " + error.message);
+            } finally {
+                btn.disabled = false;
+                spinner.classList.add('hidden');
+            }
+        });
+
+        function displayResults(probability, status) {
+            const resultsPanel = document.getElementById('resultsPanel');
+            const needle = document.getElementById('gaugeNeedle');
+            const probText = document.getElementById('probText');
+            const badge = document.getElementById('statusBadge');
+            const desc = document.getElementById('statusDesc');
+
+            resultsPanel.classList.remove('hidden');
+            
+            // Trigger reflow for animation
+            void resultsPanel.offsetWidth;
+            resultsPanel.classList.add('opacity-100');
+
+            // Set text
+            const probPercent = (probability * 100).toFixed(1);
+            probText.textContent = `${probPercent}%`;
+
+            // Calculate rotation (-90deg is 0%, 90deg is 100%)
+            const rotation = -90 + (180 * probability);
+            needle.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+
+            if (status === 1) {
+                badge.className = "w-full py-3 px-4 rounded-lg text-center font-bold text-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                badge.innerHTML = "✅ PRÉSTAMO APROBADO";
+                desc.textContent = "El perfil presenta un riesgo aceptable para la entidad. La probabilidad de aprobación es alta.";
+            } else {
+                badge.className = "w-full py-3 px-4 rounded-lg text-center font-bold text-lg bg-rose-500/20 text-rose-400 border border-rose-500/30";
+                badge.innerHTML = "❌ PRÉSTAMO DENEGADO";
+                desc.textContent = "El perfil presenta un riesgo de impago demasiado alto según el modelo de machine learning.";
+            }
+        }
+    </script>
+</body>
+</html>

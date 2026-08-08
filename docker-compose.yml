@@ -7,17 +7,3 @@ services:
     ports:
       - "8000:8000"
     restart: unless-stopped
-
-  streamlit-frontend:
-    build: 
-      context: .
-      dockerfile: Dockerfile.frontend
-    container_name: credit-risk-ui
-    ports:
-      - "8501:8501"
-    environment:
-      # Le decimos al Front-End cómo se llama la máquina del Backend dentro de la red de Docker
-      - API_URL=http://fastapi-backend:8000/predict
-    depends_on:
-      - fastapi-backend
-    restart: unless-stopped
