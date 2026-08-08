@@ -1,0 +1,28 @@
+name: Model Evaluation
+
+# Solo se dispara cuando cambian los archivos relacionados con el modelo
+on:
+  push:
+    paths:
+      - 'training/train.py'
+      - 'model/model.pkl'
+
+jobs:
+  quality-gate:
+    name: Model Quality Gate (F1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt pytest
+
+      - name: Ejecutar Quality Gate del modelo
+        run: pytest tests/test_model_quality.py -v
