@@ -81,6 +81,12 @@ def test_modelo_es_pipeline_sklearn():
     """Verifica que el objeto cargado es un Pipeline de scikit-learn."""
     assert isinstance(model, Pipeline), f"Se esperaba un Pipeline de sklearn, se obtuvo: {type(model)}"
 
+def test_predict_defaults_siempre_deniega():
+    """Si tiene impagos previos, el modelo siempre debe denegar."""
+    perfil_default = PERFIL_VALIDO.copy()
+    perfil_default["previous_loan_defaults_on_file"] = "Yes"
+    response = client.post("/predict", json=perfil_default)
+    assert response.json()["loan_status"] == 0
 
 def test_modelo_tiene_pasos_correctos():
     """Verifica que el pipeline tiene exactamente los pasos 'preprocessor' y 'classifier'."""
