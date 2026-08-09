@@ -11,6 +11,8 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
+from sqlalchemy import create_engine
+from dotenv import load_dotenv
 
 
 
@@ -37,7 +39,16 @@ CATEGORICAL_FEATURES = [
 TARGET_COL = 'loan_status'
 
 def main():
-    df = pd.read_csv(DATA_PATH)
+    # Cargar variables de entorno y conectar a la BD
+    load_dotenv()
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise ValueError("No se ha encontrado DATABASE_URL en el entorno.")
+        
+    engine = create_engine(database_url)
+    
+    print("Descargando datos de entrenamiento desde PostgreSQL...")
+    df = pd.read_sql("SELECT * FROM loan_data", engine)
     
     df = df[
         (df["person_age"] <= 100) &      #HARDCODED

@@ -24,4 +24,6 @@ jobs:
         run: pip install -r requirements.txt pytest httpx
 
       - name: Ejecutar tests
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: pytest tests/ -v
