@@ -31,8 +31,8 @@ jobs:
   deploy:
     name: Continuous Deployment (CD)
     needs: test
-    # El despliegue solo se ejecuta si los tests pasan Y estamos en la rama principal (main o DEV)
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/DEV')
+    # El despliegue a producción SOLO se ejecuta al hacer push o merge a la rama 'main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
@@ -44,5 +44,5 @@ jobs:
             echo "Error: RENDER_DEPLOY_HOOK no está configurado en GitHub Secrets."
             exit 1
           fi
-          echo "Todos los tests han pasado exitosamente. Ordenando despliegue a Render..."
+          echo "Todos los tests han pasado exitosamente en main. Desplegando a Render..."
           curl -X POST "$RENDER_DEPLOY_HOOK"
