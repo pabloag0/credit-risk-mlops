@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Literal
-
+from typing import Literal, Optional, List
 
 class LoanApplication(BaseModel):
     person_age: int = Field(..., ge=18, le=100)
@@ -20,3 +19,8 @@ class LoanApplication(BaseModel):
 class PredictionResponse(BaseModel):
     loan_status: int
     probability: float
+    prediction_id: Optional[int] = None
+
+class FeedbackItem(BaseModel):
+    prediction_id: int
+    loan_status: int = Field(..., ge=0, le=1)

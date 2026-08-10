@@ -1,8 +1,9 @@
 import os
 import json
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
+from typing import List, Optional
 
 # Cargar variables de entorno (solo necesario en local)
 load_dotenv()
@@ -29,15 +30,14 @@ def get_current_model_version():
     except Exception:
         return "v1.0" # Fallback por seguridad
 
-def save_prediction(application_data: dict, prediction: int, probability: float):
+def save_prediction(application_data: dict, prediction: int, probability: float) -> Optional[int]:
     """
     Guarda una nueva predicción realizada por la API en la base de datos.
-    El loan_status real es desconocido en este punto (se deja como None/NULL por defecto).
+    Devuelve el id autogenerado de la fila insertada o None en caso de fallo.
     """
     engine = get_engine()
     if engine is None:
-        # En caso de que no haya BD configurada, ignoramos silenciosamente
-        return
+        return None
     
     db_data = application_data.copy()
     db_data["model_prediction"] = int(prediction)
@@ -45,10 +45,37 @@ def save_prediction(application_data: dict, prediction: int, probability: float)
     db_data["data_source"] = "api"
     db_data["model_version"] = get_current_model_version()
     
-    # loan_status (real) se ignora aquí, por lo que Pandas/Postgres lo dejarán como NULL/None
+    columns = ", ".join(db_data.keys())
+    placeholders = ", ".join([f":{key}" for key in db_data.keys()])
+    query = text(f"INSERT INTO loan_predictions ({columns}) VALUES ({placeholders}) RETURNING id")
+    
+    try:
+        with engine.begin() as connection:
+            result = connection.execute(query, db_data)
+            inserted_id = result.scalar()
+            return inserted_id
+    except Exception as e:
+        print(f"Error al guardar en base de datos: {e}")
+        return None
 
-    df_to_save = pd.DataFrame([db_data])
-    df_to_save.to_sql("loan_predictions", engine, if_exists="append", index=False)
+def update_predictions_feedback(feedback_list: List[dict]):
+    """
+    Actualiza el loan_status real de múltiples registros en la base de datos.
+    Cada elemento de feedback_list debe ser un diccionario con 'prediction_id' y 'loan_status'.
+    """
+    engine = get_engine()
+    if engine is None:
+        return
+        
+    query = text("UPDATE loan_predictions SET loan_status = :loan_status WHERE id = :prediction_id")
+    
+    try:
+        with engine.begin() as connection:
+        
+            connection.execute(query, feedback_list)
+            print(f"Feedback actualizado para {len(feedback_list)} registros con éxito.")
+    except Exception as e:
+        print(f"Error al actualizar el feedback en base de datos: {e}")
 
 def load_training_data() -> pd.DataFrame:
     """
@@ -59,11 +86,9 @@ def load_training_data() -> pd.DataFrame:
     if engine is None:
         raise ValueError("DATABASE_URL no configurada. Imposible leer datos de entrenamiento.")
     
-    # Ignorar predicciones recientes de la API que aún no han sido etiquetadas con su outcome real
     query = "SELECT * FROM loan_predictions WHERE loan_status IS NOT NULL"
     df = pd.read_sql(query, engine)
     
-    # Limpiar columnas meta-analíticas de la BD antes de devolvérselo a Scikit-Learn
     columnas_a_ignorar = [
         "id", "created_at", "model_prediction", 
         "prediction_prob", "data_source", "model_version"
