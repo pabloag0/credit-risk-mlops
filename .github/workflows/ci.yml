@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Lint & Tests
+    name: Lint & Tests (CI)
     runs-on: ubuntu-latest
 
     steps:
@@ -23,7 +23,26 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt pytest httpx
 
-      - name: Ejecutar tests
+      - name: Ejecutar tests unitarios e integración
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: pytest tests/ -v
+
+  deploy:
+    name: Continuous Deployment (CD)
+    needs: test
+    # El despliegue a producción SOLO se ejecuta al hacer push o merge a la rama 'main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Disparar el Despliegue en Render (Deploy Hook)
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "Error: RENDER_DEPLOY_HOOK no está configurado en GitHub Secrets."
+            exit 1
+          fi
+          echo "Todos los tests han pasado exitosamente en main. Desplegando a Render..."
+          curl -X POST "$RENDER_DEPLOY_HOOK"
