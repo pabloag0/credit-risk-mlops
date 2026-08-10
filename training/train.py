@@ -4,6 +4,7 @@ import pandas as pd
 import joblib
 import mlflow
 import os
+from datetime import datetime
 
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
@@ -11,6 +12,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
+from api.database import load_training_data
 
 
 
@@ -37,7 +39,8 @@ CATEGORICAL_FEATURES = [
 TARGET_COL = 'loan_status'
 
 def main():
-    df = pd.read_csv(DATA_PATH)
+    print("Descargando datos de entrenamiento consolidados desde PostgreSQL...")
+    df = load_training_data()
     
     df = df[
         (df["person_age"] <= 100) &      #HARDCODED
@@ -113,12 +116,23 @@ def main():
     preds_gate = model.predict(X_gate)
     f1_gate = f1_score(y_gate, preds_gate, average="macro")
 
-    # Guardar métricas como baseline para el Quality Gate del CI
+    # Guardar métricas como baseline para el Quality Gate del CI y registrar versión
     metrics_path = os.path.join(os.path.dirname(MODEL_OUTPUT_PATH), "metrics.json")
+    
+    timestamp = datetime.now()
+    model_version = f"v-{timestamp.strftime('%Y%m%d-%H%M%S')}"
+    
+    metrics_data = {
+        "model_version": model_version,
+        "trained_at": timestamp.isoformat(),
+        "accuracy": round(accuracy, 4),
+        "f1_macro": round(f1_gate, 4)
+    }
+    
     with open(metrics_path, "w") as f:
-        json.dump({"accuracy": round(accuracy, 4), "f1_macro": round(f1_gate, 4)}, f, indent=2)
+        json.dump(metrics_data, f, indent=2)
 
-    print(f"Métricas guardadas en {metrics_path} (F1 sobre validation_sample: {f1_gate:.4f})")
+    print(f"Métricas guardadas en {metrics_path} (Versión: {model_version} | F1: {f1_gate:.4f})")
 
 if __name__ == "__main__":
     main()

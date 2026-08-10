@@ -1,4 +1,6 @@
 {
-  "accuracy": 0.8933,
+  "model_version": "v-20260810-120000",
+  "trained_at": "2026-08-10T12:00:00",
+  "accuracy": 0.9067,
   "f1_macro": 0.7991
 }

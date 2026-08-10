@@ -2,12 +2,19 @@ import os
 import joblib
 import pandas as pd
 import pytest
+from unittest.mock import patch
 from sklearn.pipeline import Pipeline
 from fastapi.testclient import TestClient
 from api.main import app
 from api.model_loader import model, predict
 
 client = TestClient(app)
+
+@pytest.fixture(autouse=True)
+def mock_db_save():
+    """Simula (mockea) la base de datos para que los tests no guarden basura en producción."""
+    with patch("pandas.DataFrame.to_sql") as mock_to_sql:
+        yield mock_to_sql
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "model", "model.pkl")
 
