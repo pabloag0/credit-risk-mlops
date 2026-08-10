@@ -1,4 +1,5 @@
 import os
+import json
 import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
@@ -18,6 +19,16 @@ def get_engine():
             _engine = create_engine(database_url)
     return _engine
 
+def get_current_model_version():
+    """Lee dinámicamente la versión del modelo actual desde metrics.json."""
+    metrics_path = os.path.join(os.path.dirname(__file__), "..", "model", "metrics.json")
+    try:
+        with open(metrics_path, "r") as f:
+            data = json.load(f)
+            return data.get("model_version", "v1.0")
+    except Exception:
+        return "v1.0" # Fallback por seguridad
+
 def save_prediction(application_data: dict, prediction: int, probability: float):
     """
     Guarda una nueva predicción realizada por la API en la base de datos.
@@ -32,7 +43,7 @@ def save_prediction(application_data: dict, prediction: int, probability: float)
     db_data["model_prediction"] = int(prediction)
     db_data["prediction_prob"] = float(probability)
     db_data["data_source"] = "api"
-    db_data["model_version"] = "v1.0"
+    db_data["model_version"] = get_current_model_version()
     
     # loan_status (real) se ignora aquí, por lo que Pandas/Postgres lo dejarán como NULL/None
 

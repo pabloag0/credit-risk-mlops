@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from api.database import get_engine
+from api.database import get_engine, get_current_model_version
 
 def seed_database():
     print("Conectando a la base de datos...")
@@ -21,9 +21,11 @@ def seed_database():
     if 'person_gender' in df.columns:
         df = df.drop(columns=['person_gender'])
 
+    model_version = get_current_model_version()
+
     # Añadir meta-columnas del nuevo esquema (loan_status real ya viene en el CSV)
     df["data_source"] = "training_csv"
-    df["model_version"] = "v1.0"
+    df["model_version"] = model_version
     df["model_prediction"] = None # No calculado
     df["prediction_prob"] = None  # No calculado
 
