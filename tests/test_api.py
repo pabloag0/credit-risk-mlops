@@ -125,8 +125,8 @@ def test_modelo_probabilidades_suman_uno():
 
 def test_feedback_endpoint_valido():
     feedback_data = [
-        {"prediction_id": 1, "real_status": 1},
-        {"prediction_id": 2, "real_status": 0}
+        {"prediction_id": 1, "loan_status": 1},
+        {"prediction_id": 2, "loan_status": 0}
     ]
     response = client.post("/feedback", json=feedback_data)
     assert response.status_code == 200
@@ -135,7 +135,7 @@ def test_feedback_endpoint_valido():
 
 def test_feedback_rechaza_datos_invalidos():
     feedback_malo = [
-        {"prediction_id": 1} # Falta real_status
+        {"prediction_id": 1} # Falta loan_status
     ]
     response = client.post("/feedback", json=feedback_malo)
     assert response.status_code == 422
