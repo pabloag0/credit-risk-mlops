@@ -45,23 +45,23 @@ flowchart TD
     end
 
     subgraph Data & Simulation
-        CSV[📄 initial_train.csv]
-        SIM[⚡ simulator.py]
+        CSV["📄 initial_train.csv"]
+        SIM["⚡ simulator.py"]
     end
 
     subgraph API & Serving Layer
-        API[🚀 FastAPI Server /predict & /feedback]
-        DAL[🔌 Data Access Layer api/database.py]
-        ML[🧠 Scikit-Learn Pipeline model.pkl]
+        API["🚀 FastAPI Server /predict & /feedback"]
+        DAL["🔌 Data Access Layer api/database.py"]
+        ML["🧠 Scikit-Learn Pipeline model.pkl"]
     end
 
     subgraph Database Layer
-        DB[(🛢️ PostgreSQL loan_predictions)]
+        DB[("🛢️ PostgreSQL loan_predictions")]
     end
 
     subgraph CI/CD & Quality
-        GA[⚙️ GitHub Actions CI/CD]
-        METRIC[📊 metrics.json Baseline & Version]
+        GA["⚙️ GitHub Actions CI/CD"]
+        METRIC["📊 metrics.json Baseline & Version"]
     end
 
     CSV -->|populate_db.py| DB
@@ -69,8 +69,8 @@ flowchart TD
     SIM -->|"HTTP POST Batches (/predict & /feedback)"| API
     API --> ML
     API --> DAL
-    DAL -->|Native SQL (RETURNING id)| DB
-    GA -->|Tests, Lints & CD to Render| API
+    DAL -->|"Native SQL (RETURNING id)"| DB
+    GA -->|"Tests, Lints & CD to Render"| API
 ```
 
 ---
