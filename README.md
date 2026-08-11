@@ -66,7 +66,7 @@ flowchart TD
 
     CSV -->|populate_db.py| DB
     UI -->|HTTP POST| API
-    SIM -->|HTTP POST Batches (/predict & /feedback)| API
+    SIM -->|"HTTP POST Batches (/predict & /feedback)"| API
     API --> ML
     API --> DAL
     DAL -->|Native SQL (RETURNING id)| DB
