@@ -13,8 +13,9 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def mock_db_save():
     """Simula (mockea) la base de datos para que los tests no guarden basura en producción."""
-    with patch("pandas.DataFrame.to_sql") as mock_to_sql:
-        yield mock_to_sql
+    with patch("api.main.save_prediction", return_value=1) as mock_save, \
+         patch("api.main.update_predictions_feedback") as mock_update:
+        yield mock_save, mock_update
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "model", "model.pkl")
 
@@ -116,3 +117,25 @@ def test_modelo_probabilidades_suman_uno():
     df = pd.DataFrame([PERFIL_VALIDO])
     probas = loaded_model.predict_proba(df)[0]
     assert abs(probas[0] + probas[1] - 1.0) < 1e-6, f"Las probabilidades no suman 1: {probas}"
+
+
+# ==============================================================================
+# BLOQUE 3: Tests de Feedback
+# ==============================================================================
+
+def test_feedback_endpoint_valido():
+    feedback_data = [
+        {"prediction_id": 1, "real_status": 1},
+        {"prediction_id": 2, "real_status": 0}
+    ]
+    response = client.post("/feedback", json=feedback_data)
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "updated_records": 2}
+
+
+def test_feedback_rechaza_datos_invalidos():
+    feedback_malo = [
+        {"prediction_id": 1} # Falta real_status
+    ]
+    response = client.post("/feedback", json=feedback_malo)
+    assert response.status_code == 422

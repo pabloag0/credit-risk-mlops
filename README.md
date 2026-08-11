@@ -7,7 +7,7 @@
 [![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3%2B-F7931E.svg)](https://scikit-learn.org/)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF.svg)](https://github.com/features/actions)
 
-Un sistema de **MLOps End-to-End** de producción diseñado para evaluar y gestionar el **Riesgo de Crédito (Credit Risk)**. El proyecto abarca desde el preprocesamiento y entrenamiento automatizado del modelo, trazabilidad en base de datos PostgreSQL, versión dinámica mediante metadatos, calidad garantizada por CI/CD, hasta una interfaz web estática de alto rendimiento y un arnés de simulación de tráfico real.
+Un sistema de **MLOps End-to-End** de producción diseñado para evaluar y gestionar el **Riesgo de Crédito (Credit Risk)**. El proyecto abarca desde el preprocesamiento y entrenamiento automatizado del modelo, trazabilidad en base de datos PostgreSQL, versión dinámica mediante metadatos, calidad garantizada por CI/CD, hasta una interfaz web estática de alto rendimiento y un arnés de simulación de tráfico real con feedback loop de resultados.
 
 ---
 
@@ -17,15 +17,10 @@ Un sistema de **MLOps End-to-End** de producción diseñado para evaluar y gesti
 - [📂 Estructura del Repositorio](#-estructura-del-repositorio)
 - [🗄️ Esquema de la Base de Datos](#️-esquema-de-la-base-de-datos)
 - [🔄 Pipeline MLOps y Ciclo de Vida](#-pipeline-mlops-y-ciclo-de-vida)
-  - [1. Data Ingestion & Seeding](#1-data-ingestion--seeding)
-  - [2. Model Training & MLflow Tracking](#2-model-training--mlflow-tracking)
-  - [3. Auto-Versioning & Metadata Centralization](#3-auto-versioning--metadata-centralization)
-  - [4. Data Access Layer (DAL) & Inference API](#4-data-access-layer-dal--inference-api)
-  - [5. CI/CD & Automated Quality Gates](#5-cicd--automated-quality-gates)
-  - [6. Production Traffic Simulator](#6-production-traffic-simulator)
 - [🚀 Guía de Instalación y Ejecución Local](#-guía-de-instalación-y-ejecución-local)
 - [🛡️ Pruebas Automatizadas y Mocks](#️-pruebas-automatizadas-y-mocks)
 - [🌐 Despliegue en Producción (Render)](#-despliegue-en-producción-render)
+- [🚧 Próximos Pasos (Roadmap)](#-próximos-pasos-roadmap)
 
 ---
 
@@ -34,9 +29,10 @@ Un sistema de **MLOps End-to-End** de producción diseñado para evaluar y gesti
 El objetivo principal es predecir la probabilidad de impago (`loan_status`: 0 = Aprobado, 1 = Denegado/Riesgo) de un cliente solicitante de crédito basándose en su perfil socioeconómico e historial crediticio.
 
 A diferencia de proyectos académicos aislados, esta solución aborda problemas reales de producción:
-1. **Model & Data Drift Monitoring**: Monitorización continua de predicciones vs. datos reales.
+1. **Model & Data Drift Monitoring**: Monitorización continua de predicciones vs. datos reales gracias a un feedback loop integrado.
 2. **Desacoplamiento Total**: Separación entre Frontend (sitio estático), Backend (FastAPI REST API), Capa de Persistencia (PostgreSQL) y Pipeline de ML.
-3. **Traceability & Auditing**: Identificación exacta de qué versión de modelo generó cada predicción en la base de datos.
+3. **Traceability & Auditing**: Identificación exacta de qué versión de modelo generó cada predicción en la base de datos, insertada con SQL nativo robusto.
+4. **CI/CD Automático**: Pipeline integral de integración y despliegue automático hacia entornos productivos bajo reglas estrictas (solo en rama `main`).
 
 ---
 
@@ -54,7 +50,7 @@ flowchart TD
     end
 
     subgraph API & Serving Layer
-        API[🚀 FastAPI Server /predict]
+        API[🚀 FastAPI Server /predict & /feedback]
         DAL[🔌 Data Access Layer api/database.py]
         ML[🧠 Scikit-Learn Pipeline model.pkl]
     end
@@ -64,17 +60,17 @@ flowchart TD
     end
 
     subgraph CI/CD & Quality
-        GA[⚙️ GitHub Actions CI]
+        GA[⚙️ GitHub Actions CI/CD]
         METRIC[📊 metrics.json Baseline & Version]
     end
 
     CSV -->|populate_db.py| DB
     UI -->|HTTP POST| API
-    SIM -->|HTTP POST Batches| API
+    SIM -->|HTTP POST Batches (/predict & /feedback)| API
     API --> ML
     API --> DAL
-    DAL --> DB
-    GA -->|Quality Gate / Pytest| METRIC
+    DAL -->|Native SQL (RETURNING id)| DB
+    GA -->|Tests, Lints & CD to Render| API
 ```
 
 ---
@@ -85,60 +81,44 @@ flowchart TD
 credit-risk-mlops/
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml                     # Integración Continua: Linter y Tests unitarios de API
-│       └── model_evaluation.yml       # Quality Gate: Verificación de no degradación del modelo (F1)
+│       └── ci.yml                     # Pipeline CI/CD unificado (Lint, Tests y Auto-Deploy a Producción)
 ├── api/
-│   ├── database.py                    # Capa de Acceso a Datos (DAL) aislada con SQLAlchemy
-│   ├── main.py                        # Servidor principal FastAPI y configuración de CORS
-│   ├── model_loader.py                # Carga en memoria del pipeline Scikit-Learn (joblib)
-│   └── schemas.py                     # DTOs y validación estricta de entrada con Pydantic
+│   ├── database.py                    # Capa de Acceso a Datos (DAL) optimizada con SQL nativo
+│   ├── main.py                        # Servidor FastAPI (/predict y /feedback)
+│   ├── model_loader.py                # Carga del modelo en memoria (joblib)
+│   └── schemas.py                     # DTOs y validación con Pydantic
 ├── frontend/
-│   └── index.html                     # Interfaz gráfica SPA de alto rendimiento (HTML5/Tailwind)
+│   └── index.html                     # Interfaz gráfica SPA de alto rendimiento (Tailwind)
 ├── model/
-│   ├── metrics.json                   # Registro ligero de metadatos (Model Version, F1, Accuracy)
-│   └── model.pkl                      # Pipeline empaquetado de Scikit-Learn
+│   ├── metrics.json                   # Metadatos del modelo (Version, F1, Accuracy)
+│   └── model.pkl                      # Pipeline Scikit-Learn empaquetado
 ├── tests/
-│   ├── test_api.py                    # Tests de endpoints de API con DB MOCKED (sin basura en Prod)
-│   ├── test_model_quality.py          # Test del Quality Gate del modelo contra el baseline
-│   └── validation_sample.csv          # Muestra estática aislada para la evaluación del CI
+│   └── test_api.py                    # Tests unitarios con persistencia a base de datos mockeada
 ├── training/
-│   ├── initial_train.csv              # Dataset inicial de entrenamiento
-│   ├── populate_db.py                 # Script de sembrado/migración inicial a la BD PostgreSQL
-│   └── train.py                       # Script principal de entrenamiento y tracking con MLflow
-├── Dockerfile                         # Receta de construcción del contenedor Docker para la API
-├── docker-compose.yml                 # Orquestador para ejecución en entorno de desarrollo local
-├── pytest.ini                         # Configuración global de Pytest
-├── requirements.txt                   # Dependencias necesarias en producción y CI
-└── simulator.py                       # Arnés de simulación de tráfico real en lotes (batch simulation)
+│   ├── initial_train.csv              # Dataset de entrenamiento inicial
+│   ├── populate_db.py                 # Poblado inicial de la DB PostgreSQL
+│   └── train.py                       # Entrenamiento y tracking con MLflow
+├── Dockerfile                         # Contenedor de producción
+├── docker-compose.yml                 # Entorno local
+└── simulator.py                       # Simulador de inferencia y feedback en lotes (batch)
 ```
 
 ---
 
 ## 🗄️ Esquema de la Base de Datos
 
-Toda la persistencia se gestiona en la tabla **`loan_predictions`** de PostgreSQL, diseñada bajo los principios de observabilidad en MLOps:
+Toda la persistencia reside en la tabla **`loan_predictions`**, que soporta de forma robusta la trazabilidad del ciclo de vida predictivo y se actualiza a través de un **Feedback Loop**:
 
 ```sql
 CREATE TABLE loan_predictions (
-    id SERIAL PRIMARY KEY,                          -- Identificador único autoincremental
-    person_age FLOAT,                              -- Edad del cliente
-    person_education VARCHAR(50),                   -- Nivel educativo
-    person_income FLOAT,                           -- Ingresos anuales
-    person_emp_exp INT,                            -- Experiencia laboral (años)
-    person_home_ownership VARCHAR(50),              -- Tipo de vivienda (RENT, MORTGAGE, OWN, OTHER)
-    loan_amnt FLOAT,                               -- Cantidad solicitada
-    loan_intent VARCHAR(50),                       -- Propósito del préstamo
-    loan_int_rate FLOAT,                           -- Tipo de interés esperado
-    loan_percent_income FLOAT,                     -- Porcentaje del sueldo que representa el préstamo
-    cb_person_cred_hist_length FLOAT,              -- Años de historial crediticio
-    credit_score INT,                              -- Puntuación de crédito (300-850)
-    previous_loan_defaults_on_file VARCHAR(10),    -- ¿Impagos previos en registro? (Yes/No)
-    loan_status INT,                               -- Outcome REAL (0 = Aprobado, 1 = Denegado / NULL en inferencia)
-    model_prediction INT,                          -- Predicción realizada por el modelo (0 o 1)
-    prediction_prob FLOAT,                         -- Probabilidad estimada por el modelo
-    data_source VARCHAR(20),                       -- Origen del dato ('training_csv', 'api')
-    model_version VARCHAR(30),                     -- Versión exacta del modelo (ej. 'v-20260810-120000')
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- Fecha automática de inserción
+    id SERIAL PRIMARY KEY,
+    -- [Características socioeconómicas omitidas para brevedad]
+    loan_status INT,                               -- Outcome REAL enviado a posteriori vía feedback loop
+    model_prediction INT,                          -- Predicción inicial
+    prediction_prob FLOAT,                         -- Confianza de la predicción
+    data_source VARCHAR(20),                       -- Origen ('training_csv', 'api')
+    model_version VARCHAR(30),                     -- Versión exacta del modelo que predijo
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -146,102 +126,79 @@ CREATE TABLE loan_predictions (
 
 ## 🔄 Pipeline MLOps y Ciclo de Vida
 
-### 1. Data Ingestion & Seeding
-El script `training/populate_db.py` lee el dataset inicial `initial_train.csv`, elimina columnas obsoletas (como `person_gender`), inyecta los metadatos `data_source = 'training_csv'` y la versión del modelo vigente, y puebla la base de datos PostgreSQL.
+### 1. Model Training & MLflow Tracking
+Se entrena un pipeline (`Imputación` -> `Escalado` -> `OneHot` -> `Regresión Logística`). Al finalizar, se crea una etiqueta de versión (e.g., `v-20260810-120000`) almacenada en `metrics.json` junto con el `F1 Score`.
 
-### 2. Model Training & MLflow Tracking
-Al ejecutar `training/train.py`:
-- Descarga automáticamente los datos etiquetados desde PostgreSQL mediante la consulta:
-  $$\text{SELECT * FROM loan\_predictions WHERE loan\_status IS NOT NULL}$$
-- Limpia las variables metaanalíticas (`id`, `created_at`, `model_prediction`, etc.).
-- Construye un **Pipeline de Scikit-Learn** completo:
-  - **Atributos Numéricos**: `SimpleImputer(strategy='median')` + `StandardScaler()`
-  - **Atributos Categóricos**: `SimpleImputer(fill_value='missing')` + `OneHotEncoder(handle_unknown='ignore')`
-  - **Clasificador**: `LogisticRegression(max_iter=1000, random_state=42)`
-- Loggea parámetros, métricas (Accuracy, F1 Macro) y el propio artefacto del modelo en **MLflow**.
+### 2. Data Access Layer & Feedback Loop
+- **FastAPI Backend (`api/main.py`)**: 
+  - Expone el endpoint `/predict` que inserta la predicción mediante **SQL nativo** utilizando `RETURNING id`. Devuelve este ID al cliente.
+  - Expone un nuevo endpoint `/feedback` que permite recibir los resultados reales a posteriori para actualizar masivamente los registros pendientes (`loan_status`).
+- **Tolerancia a fallos**: Diseñado para soportar fallos de BD sin bloquear las respuestas al usuario de la API.
 
-### 3. Auto-Versioning & Metadata Centralization
-Al finalizar el entrenamiento con éxito:
-1. El script genera una etiqueta de versión basada en un timestamp único: `v-YYYYMMDD-HHMMSS`.
-2. Actualiza `model/metrics.json`, registrando la versión, la fecha ISO de entrenamiento y las métricas baseline.
-3. Al arrancar la API o ejecutar predicciones, el módulo `api/database.py` lee de manera dinámica esta versión del archivo `metrics.json`, garantizando que **todas las predicciones en producción queden etiquetadas con la versión exacta que está sirviendo la API**.
+### 3. CI/CD Pipeline Robusto
+Gestionado vía **GitHub Actions**:
+- **CI (Continuous Integration)**: En cada commit, ejecuta linting de código y pasa la suite de tests en Pytest.
+- **CD (Continuous Deployment)**: Si el commit se integra a la rama `main` y todos los tests pasan, lanza un webhook para un **Deploy Automático a Render**. Jamás despliega código desde ramas de desarrollo.
 
-### 4. Data Access Layer (DAL) & Inference API
-- **FastAPI Backend (`api/main.py`)**: Expone el endpoint POST `/predict` protegido con validación Pydantic estricta (`api/schemas.py`).
-- **Data Access Layer (`api/database.py`)**:
-  - Implementa el patrón **Singleton** para la conexión SQLAlchemy (`get_engine()`), evitando saturar el pool de conexiones de la base de datos.
-  - Al realizar una predicción, inserta la fila en `loan_predictions` asignando `data_source = 'api'`, `model_prediction` y `prediction_prob`. El campo `loan_status` se deja intencionadamente como `NULL` a la espera del resultado real.
-  - Está envuelto en un bloque `try/except` que garantiza **tolerancia a fallos**: si la base de datos se cae, la API sigue respondiendo la predicción al cliente web.
-
-### 5. CI/CD & Automated Quality Gates
-Mediante **GitHub Actions**:
-- **CI Pipeline (`ci.yml`)**: Se ejecuta en cada `push` o `pull_request`. Verifica la sintaxis, instala dependencias y lanza la suite de tests unitarios.
-- **Model Evaluation Pipeline (`model_evaluation.yml`)**: Se activa ante cambios en el modelo o script de entrenamiento. Ejecuta un **Quality Gate** (`tests/test_model_quality.py`) que evalúa el modelo actual sobre `tests/validation_sample.csv` y exige que su F1 Macro **no caiga más de un 2%** respecto al baseline registrado en `metrics.json`.
-
-### 6. Production Traffic Simulator
-El archivo `simulator.py` es un arnés de simulación que lee un dataset real aislado y envía peticiones HTTP POST por lotes (batches) a la API:
-```bash
-# Ejemplo: enviar peticiones en lotes de 250 contra la API en producción
-python simulator.py --url "https://tu-api.onrender.com/predict" --batch-size 250
-```
+### 4. Production Traffic Simulator
+El script `simulator.py` actúa como un orquestador de estrés de la API:
+- Envía bloques de peticiones a `/predict`.
+- Captura dinámicamente los `prediction_id` generados por la API.
+- Reúne el status real de cada préstamo y ejecuta llamadas periódicas en lote (Batch) hacia el endpoint `/feedback` para enriquecer la base de datos de producción con resultados verdaderos.
 
 ---
 
 ## 🚀 Guía de Instalación y Ejecución Local
 
-### 1. Clonar el repositorio y configurar el entorno
+### 1. Clonar y Configurar Entorno Virtual
 ```bash
 git clone https://github.com/tu-usuario/credit-risk-mlops.git
 cd credit-risk-mlops
-
-python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Configurar variables de entorno
-Crea un archivo `.env` en la raíz del proyecto:
+### 2. Base de Datos
+Crea el archivo `.env` en la raíz (o usa docker-compose):
 ```env
 DATABASE_URL=postgresql://usuario:password@localhost:5432/credit_risk_db
 ```
 
-### 3. Entrenar el modelo localmente
+### 3. Levantar Servicios
 ```bash
-python training/train.py
+docker-compose up -d --build
+uvicorn api.main:app --reload
 ```
-
-### 4. Levantar la API localmente (opciones)
-**Vía Python directo:**
-```bash
-uvicorn api.main:app --reload --port 8000
-```
-**Vía Docker Compose:**
-```bash
-docker-compose up --build -d
-```
-
-### 5. Probar el Frontend
-Abre directamente el archivo `frontend/index.html` en cualquier navegador web.
 
 ---
 
 ## 🛡️ Pruebas Automatizadas y Mocks
 
-Para ejecutar la batería completa de pruebas:
+Para ejecutar la batería completa de pruebas localmente:
 ```bash
 pytest tests/ -v
 ```
 
 > [!IMPORTANT]
-> **Protección contra contaminación de datos**: 
-> Los tests de la API utilizan un fixture automático (`autouse=True`) en `tests/test_api.py` que intercepta la función `pandas.DataFrame.to_sql` mediante `unittest.mock.patch`. Esto garantiza que la ejecución de `pytest` (local o en GitHub Actions) **nunca inserte registros basura en tu base de datos de producción**.
+> **Protección contra contaminación de datos (Database Mocking)**:
+> Los tests de la API utilizan un interceptor inteligente con `unittest.mock.patch` sobre `api.main.save_prediction` y `api.main.update_predictions_feedback`. Esto garantiza que los test funcionales se verifiquen sin escribir información "basura" en la PostgreSQL productiva.
 
 ---
 
 ## 🌐 Despliegue en Producción (Render)
 
-El proyecto está diseñado para desplegarse fácilmente en **Render**:
-1. **Base de Datos**: Instancia PostgreSQL gestionada en Render.
-2. **Web Service (API)**: Conectado al repositorio de GitHub con construcción mediante `Dockerfile`.
-   - Variable de entorno en Render: `DATABASE_URL` (configurada con el Internal Database URL comenzando por `postgresql://`).
-3. **Frontend**: Alojado como Static Site o consumido directamente vía `index.html`.
+- **PostgreSQL**: Instancia alojada con almacenamiento persistente.
+- **Web Service API**: Se despliega de forma totalmente automática por GitHub Actions al hacer merge en `main`.
+- **Límites de recursos (Free Tier)**: El simulador incluye retardos estratégicos y un mayor timeout para no sobrecargar el servidor gratuito con peticiones por lotes masivas.
+
+---
+
+## 🚧 Próximos Pasos (Roadmap)
+
+La arquitectura actual ya soporta la ingesta de predicciones y su consolidación con el feedback real. A partir de aquí, las próximas grandes evoluciones del MLOps System son:
+
+- [ ] **Data Drift Detection**: Integrar un mecanismo (en el simulador o cronjob) para comparar periódicamente la distribución estadística de los nuevos clientes recibidos en la API frente a la muestra original de entrenamiento.
+- [ ] **Model Drift / Concept Drift**: Detectar degradación de rendimiento. Usando el feedback ya disponible en base de datos, construir alarmas automatizadas si métricas clave (como el `F1-Score` o el `Accuracy` en producción) caen por debajo de los umbrales configurados.
+- [ ] **Automated Retraining Pipeline**: Activar el flujo de re-entrenamiento (`train.py`) de forma automática y controlada en respuesta a alertas de Drift.
+- [ ] **Dashboarding Analítico**: Exponer los datos recogidos en PostgreSQL mediante un panel de control interactivo (p. ej. Grafana o Metabase) en tiempo real para visibilidad de negocio y data science.
