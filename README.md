@@ -3,7 +3,6 @@
 [![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688.svg)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%2B-4169E1.svg)](https://www.postgresql.org/)
-[![MLflow](https://img.shields.io/badge/MLflow-2.0%2B-0194E2.svg)](https://mlflow.org/)
 [![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3%2B-F7931E.svg)](https://scikit-learn.org/)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF.svg)](https://github.com/features/actions)
 
@@ -97,7 +96,7 @@ credit-risk-mlops/
 ├── training/
 │   ├── initial_train.csv              # Dataset de entrenamiento inicial
 │   ├── populate_db.py                 # Poblado inicial de la DB PostgreSQL
-│   └── train.py                       # Entrenamiento y tracking con MLflow
+│   └── train.py                       # Entrenamiento y volcado de métricas básicas
 ├── Dockerfile                         # Contenedor de producción
 ├── docker-compose.yml                 # Entorno local
 └── simulator.py                       # Simulador de inferencia y feedback en lotes (batch)
@@ -126,7 +125,7 @@ CREATE TABLE loan_predictions (
 
 ## 🔄 Pipeline MLOps y Ciclo de Vida
 
-### 1. Model Training & MLflow Tracking
+### 1. Model Training
 Se entrena un pipeline (`Imputación` -> `Escalado` -> `OneHot` -> `Regresión Logística`). Al finalizar, se crea una etiqueta de versión (e.g., `v-20260810-120000`) almacenada en `metrics.json` junto con el `F1 Score`.
 
 ### 2. Data Access Layer & Feedback Loop
@@ -202,3 +201,4 @@ La arquitectura actual ya soporta la ingesta de predicciones y su consolidación
 - [ ] **Model Drift / Concept Drift**: Detectar degradación de rendimiento. Usando el feedback ya disponible en base de datos, construir alarmas automatizadas si métricas clave (como el `F1-Score` o el `Accuracy` en producción) caen por debajo de los umbrales configurados.
 - [ ] **Automated Retraining Pipeline**: Activar el flujo de re-entrenamiento (`train.py`) de forma automática y controlada en respuesta a alertas de Drift.
 - [ ] **Dashboarding Analítico**: Exponer los datos recogidos en PostgreSQL mediante un panel de control interactivo (p. ej. Grafana o Metabase) en tiempo real para visibilidad de negocio y data science.
+- [ ] **MLflow Tracking Server**: Recuperar MLflow (actualmente purgado) para registrar y persistir de manera profesional todas las ejecuciones (experiments), artefactos, hiperparámetros y métricas en un servidor dedicado en lugar de en archivos JSON locales.
