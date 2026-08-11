@@ -4,7 +4,6 @@ pydantic
 numpy
 pandas
 scikit-learn>=1.9.0
-mlflow
 sqlalchemy
 psycopg2-binary
 python-dotenv

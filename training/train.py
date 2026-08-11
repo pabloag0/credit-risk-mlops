@@ -2,7 +2,6 @@ import json
 
 import pandas as pd
 import joblib
-import mlflow
 import os
 from datetime import datetime
 
@@ -77,30 +76,16 @@ def main():
         X, y, test_size=0.1, random_state=42, stratify=y
     )
 
-    with mlflow.start_run():
-        # Entrenamiento solo con el 90%
-        model.fit(X_train, y_train)
+    # Entrenamiento solo con el 90%
+    model.fit(X_train, y_train)
 
-        # Cálculo de métricas sobre el 10% de validación (datos no vistos)
-        from sklearn.metrics import f1_score
-        preds = model.predict(X_val)
-        accuracy = model.score(X_val, y_val)
-        f1 = f1_score(y_val, preds, average="macro")
+    # Cálculo de métricas sobre el 10% de validación (datos no vistos)
+    from sklearn.metrics import f1_score
+    preds = model.predict(X_val)
+    accuracy = model.score(X_val, y_val)
+    f1 = f1_score(y_val, preds, average="macro")
 
-        # Log de hiperparámetros
-        mlflow.log_param("max_iter", 1000) #HARDCODED
-        mlflow.log_param("solver", "lbfgs")
-        mlflow.log_param("random_state", 42) #HARDCODED
-
-
-        # Log de métricas
-        mlflow.log_metric("accuracy", accuracy)
-        mlflow.log_metric("f1_macro", f1)
-
-        # Log del modelo
-        mlflow.sklearn.log_model(model, "model", skops_trusted_types=["numpy.dtype"])
-
-        print(f"Entrenamiento completado — Accuracy: {accuracy:.4f} | F1 macro: {f1:.4f}")
+    print(f"Entrenamiento completado — Accuracy: {accuracy:.4f} | F1 macro: {f1:.4f}")
 
     os.makedirs(os.path.dirname(MODEL_OUTPUT_PATH), exist_ok=True)
     joblib.dump(model, MODEL_OUTPUT_PATH)
